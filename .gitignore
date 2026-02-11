@@ -17,6 +17,11 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
 # Runtime data
 pids
 *.pid

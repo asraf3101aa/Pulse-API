@@ -3,11 +3,9 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import { status as httpStatus } from 'http-status';
-import config from './config/config';
-
-import routes from './routes/v1';
 import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
+import routes from './routes';
 
 const app = express();
 
@@ -29,7 +27,7 @@ app.use(compression());
 app.use(cors());
 
 // v1 api routes
-app.use('/v1', routes);
+app.use('/', routes);
 
 // send back a 404 error for any unknown api request
 app.use((req: Request, res: Response, next: NextFunction) => {
