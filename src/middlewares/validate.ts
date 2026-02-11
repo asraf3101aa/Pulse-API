@@ -26,7 +26,6 @@ const validate = (schema: { body?: ZodObject<any>; query?: ZodObject<any>; param
                         errors[key] = [];
                     }
 
-                    // Add the message to the list for this key
                     errors[key].push(issue.message);
                 });
 
