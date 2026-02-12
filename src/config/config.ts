@@ -5,11 +5,11 @@ import { z } from 'zod';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const envSchema = z.object({
-    NODE_ENV: z.enum(['production', 'development', 'test']).default('development'),
+    NODE_ENV: z.enum(['production', 'development', 'staging']).default('development'),
     PORT: z.coerce.number().default(3000),
     DATABASE_URL: z.string().default('file:local.db'),
-    JWT_SECRET: z.string().default('thisisasecret'),
-    JWT_ACCESS_EXPIRATION_MINUTES: z.coerce.number().default(30),
+    NODE_SECRET: z.string().default('thisisasecret'),
+    JWT_ACCESS_TOKEN_LIFETIME_IN_MINUTES: z.coerce.number().default(30),
 });
 
 const envVars = envSchema.parse(process.env);
@@ -21,7 +21,7 @@ export default {
         url: envVars.DATABASE_URL,
     },
     jwt: {
-        secret: envVars.JWT_SECRET,
-        accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
+        secret: envVars.NODE_SECRET,
+        accessExpirationMinutes: envVars.JWT_ACCESS_TOKEN_LIFETIME_IN_MINUTES,
     },
 };

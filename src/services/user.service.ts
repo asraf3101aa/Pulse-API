@@ -52,3 +52,7 @@ export const deleteUserById = async (id: number): Promise<User | undefined> => {
   const [deletedUser] = await db.delete(users).where(eq(users.id, id)).returning();
   return deletedUser;
 };
+
+export const getUsers = async (): Promise<User[]> => {
+  return db.select().from(users).where(eq(users.isDeleted, false));
+};

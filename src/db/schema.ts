@@ -5,8 +5,8 @@ export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
-  firstName: text('first_name',{ length: 20 }).notNull(),
-  lastName: text('last_name',{ length: 20 }),
+  firstName: text('first_name', { length: 20 }).notNull(),
+  lastName: text('last_name', { length: 20 }),
   email: text('email').notNull().unique(),
   isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   dateJoined: integer('date_joined', { mode: 'timestamp' })
@@ -15,7 +15,7 @@ export const users = sqliteTable('users', {
 
   phoneNumber: text('phone_number').unique(),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false).notNull(),
-  
+
   updatedAt: integer('updated_at', { mode: 'timestamp' })
     .default(sql`(unixepoch())`)
     .$onUpdate(() => new Date()),
@@ -30,5 +30,43 @@ export const userLoggedInDevices = sqliteTable('user_logged_in_devices', {
   deviceName: text('device_name'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`(unixepoch())`)
+    .notNull(),
+});
+
+export const roles = sqliteTable('roles', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`(unixepoch())`)
+    .notNull(),
+});
+
+export const permissions = sqliteTable('permissions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`(unixepoch())`)
+    .notNull(),
+});
+
+export const rolePermissions = sqliteTable('role_permissions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  roleId: integer('role_id')
+    .references(() => roles.id, { onDelete: 'cascade' })
+    .notNull(),
+  permissionId: integer('permission_id')
+    .references(() => permissions.id, { onDelete: 'cascade' })
+    .notNull(),
+});
+
+export const userRoles = sqliteTable('user_roles', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  roleId: integer('role_id')
+    .references(() => roles.id, { onDelete: 'cascade' })
     .notNull(),
 });

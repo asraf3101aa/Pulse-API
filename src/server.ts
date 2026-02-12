@@ -2,11 +2,25 @@ import { Server } from 'http';
 import app from './app';
 import config from './config/config';
 import logger from './config/logger';
+import { seedRBAC } from './services/rbac.service';
 
 let server: Server;
-server = app.listen(config.port, () => {
-    logger.info(`Listening to port ${config.port}`);
-});
+
+const startServer = async () => {
+    try {
+        await seedRBAC();
+        logger.info('RBAC seeds synchronized');
+
+        server = app.listen(config.port, () => {
+            logger.info(`Listening to port ${config.port}`);
+        });
+    } catch (error) {
+        logger.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
 
 const exitHandler = () => {
     if (server) {
