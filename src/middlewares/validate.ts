@@ -9,10 +9,14 @@ const validate = (schema: { body?: ZodObject<any>; query?: ZodObject<any>; param
                 req.body = schema.body.parse(req.body);
             }
             if (schema.query) {
-                req.query = schema.query.parse(req.query) as any;
+                const parsedQuery = schema.query.parse(req.query);
+                Object.keys(req.query).forEach((key) => delete (req.query as any)[key]);
+                Object.assign(req.query, parsedQuery);
             }
             if (schema.params) {
-                req.params = schema.params.parse(req.params) as any;
+                const parsedParams = schema.params.parse(req.params);
+                Object.keys(req.params).forEach((key) => delete (req.params as any)[key]);
+                Object.assign(req.params, parsedParams);
             }
             return next();
         } catch (error) {
