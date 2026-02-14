@@ -74,7 +74,7 @@ export const userRoles = sqliteTable('user_roles', {
 export const threads = sqliteTable('threads', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   title: text('title').notNull(),
-  description: text('description').notNull(),
+  description: text('description'),
   authorId: integer('author_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),

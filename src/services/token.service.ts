@@ -1,37 +1,47 @@
 import jwt from 'jsonwebtoken';
 import config from '../config';
+import { serviceError } from '../utils/serviceError';
 
 export const generateToken = (userId: number, expiresMinutes: number, secret: string): string => {
     const payload = {
         sub: userId,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + (expiresMinutes * 60),
-
     };
-    return jwt.sign(payload, secret, {
-        issuer: config.jwt.issuer,
-        audience: config.jwt.audience
-    });
+    return jwt.sign(payload, secret);
 };
 
 export const verifyToken = async (token: string, secret: string) => {
-    const payload = jwt.verify(token, secret, {
-        issuer: config.jwt.issuer,
-        audience: config.jwt.audience,
-    });
-
-    return payload;
+    try {
+        const payload = jwt.verify(token, secret) as { sub: string };
+        return { payload, message: 'Token verified successfully' };
+    } catch (error: any) {
+        return { payload: null, ...serviceError(error, 'Token verification failed') };
+    }
 };
 
 export const generateAuthTokens = async (userId: number) => {
-    const accessToken = generateToken(userId, config.jwt.accessExpirationMinutes, config.jwt.accessTokenSecret);
+    try {
+        const accessToken = generateToken(
+            userId,
+            config.jwt.accessExpirationMinutes,
+            config.jwt.accessTokenSecret
+        );
 
-    const refreshTokenExpires = new Date();
-    refreshTokenExpires.setDate(refreshTokenExpires.getDate() + config.jwt.refreshExpirationDays);
-    const refreshToken = generateToken(userId, config.jwt.refreshExpirationDays * 24 * 60, config.jwt.refreshTokenSecret);
+        const refreshToken = generateToken(
+            userId,
+            config.jwt.refreshExpirationDays * 24 * 60,
+            config.jwt.refreshTokenSecret
+        );
 
-    return {
-        accessToken,
-        refreshToken,
-    };
+        return {
+            tokens: {
+                accessToken,
+                refreshToken
+            },
+            message: 'Tokens generated successfully',
+        };
+    } catch (error: any) {
+        return { tokens: null, ...serviceError(error, 'Token generation failed') };
+    }
 };

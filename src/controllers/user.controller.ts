@@ -4,10 +4,9 @@ import ApiResponse from '../utils/ApiResponse';
 
 export const getProfileById = catchAsync(async (req, res) => {
     const userId = parseInt(req.params['id'] as string, 10);
-    const user = await userService.getUserById(userId);
+    const { user, message } = await userService.getUserById(userId);
     if (!user) {
-        ApiResponse.notFound(res, 'User not found');
-        return;
+        return ApiResponse.notFound(res, message || 'User not found');
     }
-    ApiResponse.success(res, user, 'User profile fetched successfully');
+    return ApiResponse.success(res, user, message);
 });

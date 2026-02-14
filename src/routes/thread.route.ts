@@ -9,7 +9,9 @@ const router = express.Router();
 
 router.route('/')
     .post(auth(p.thread.create), validate(threadValidation.createThread), threadController.createThread)
-    .get(auth(p.thread.read), threadController.getThreads);
+    .get(auth(p.thread.read), validate(threadValidation.getThreads), threadController.getThreads);
+
+router.get('/me', auth(p.thread.read), validate(threadValidation.getThreads), threadController.getAuthUserThreads);
 
 router.get('/:id', auth(p.thread.read), validate(threadValidation.getThread), threadController.getThread);
 

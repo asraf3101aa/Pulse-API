@@ -1,82 +1,100 @@
 import { db } from '../db';
 import { users, roles, userRoles } from '../db/schema';
-import { NewUser, User } from '../models/user.model';
+import { NewUser } from '../models/user.model';
 import { eq, or, and } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import { ROLES } from '../config/rbac.config';
+import { serviceError } from '../utils/serviceError';
 
-export const createUser = async (user: NewUser): Promise<User | null> => {
-  const hashedPassword = await bcrypt.hash(user.password, 10);
+export const createUser = async (user: NewUser) => {
+  try {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
 
-  return await db.transaction(async (tx) => {
-    const [createdUser] = await tx
-      .insert(users)
-      .values({ ...user, password: hashedPassword })
-      .returning();
+    const createdUser = await db.transaction(async (tx) => {
+      const [newUser] = await tx
+        .insert(users)
+        .values({ ...user, password: hashedPassword })
+        .returning();
 
-    if (!createdUser) {
-      return null;
-    }
+      if (!newUser) throw new Error('Failed to create user');
 
-    const [userRole] = await tx
+      const [userRole] = await tx
+        .select()
+        .from(roles)
+        .where(eq(roles.name, ROLES.USER.name))
+        .limit(1);
+
+      if (userRole) {
+        await tx.insert(userRoles).values({
+          userId: newUser.id,
+          roleId: userRole.id,
+        });
+      }
+
+      return newUser;
+    });
+
+    return { user: createdUser, message: 'User created successfully' };
+  } catch (error: any) {
+    return { user: null, ...serviceError(error, 'Failed to create user') };
+  }
+};
+
+export const getUserByIdentifier = async (identifier: string) => {
+  try {
+    const [user] = await db
       .select()
-      .from(roles)
-      .where(eq(roles.name, ROLES.USER.name))
+      .from(users)
+      .where(
+        and(
+          or(eq(users.email, identifier), eq(users.username, identifier))
+        )
+      )
       .limit(1);
 
-    if (userRole) {
-      await tx.insert(userRoles).values({
-        userId: createdUser.id,
-        roleId: userRole.id,
-      });
-    }
-
-    return createdUser;
-  });
+    if (!user) return { user: null, message: 'User not found' };
+    return { user, message: 'User retrieved successfully' };
+  } catch (error: any) {
+    return { user: null, ...serviceError(error, 'Failed to get user') };
+  }
 };
 
-export const getUserByIdentifier = async (
-  identifier: string
-): Promise<User | undefined> => {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(
-      and(
-        or(eq(users.email, identifier), eq(users.username, identifier)),
-        eq(users.isActive, true),
-        eq(users.isDeleted, false)
-      )
-    )
-    .limit(1);
+export const getUserById = async (id: number) => {
+  try {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.isDeleted, false)))
+      .limit(1);
 
-  return user;
+    if (!user) return { user: null, message: 'User not found' };
+    return { user, message: 'User retrieved successfully' };
+  } catch (error: any) {
+    return { user: null, ...serviceError(error, 'Failed to get user') };
+  }
 };
 
-export const getUserById = async (id: number): Promise<User | undefined> => {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.id, id), eq(users.isDeleted, false)))
-    .limit(1);
+export const updateUserById = async (id: number, updateData: Partial<NewUser>) => {
+  try {
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
 
-  return user;
+    if (!updatedUser) return { user: null, message: 'User not found or not updated' };
+    return { user: updatedUser, message: 'User updated successfully' };
+  } catch (error: any) {
+    return { user: null, ...serviceError(error, 'Failed to update user') };
+  }
 };
 
-export const updateUserById = async (id: number, updateData: Partial<NewUser>): Promise<User | undefined> => {
-  const [updatedUser] = await db
-    .update(users)
-    .set(updateData)
-    .where(eq(users.id, id))
-    .returning();
-  return updatedUser;
-};
-
-export const deleteUserById = async (id: number): Promise<User | undefined> => {
-  const [deletedUser] = await db.delete(users).where(eq(users.id, id)).returning();
-  return deletedUser;
-};
-
-export const getUsers = async (): Promise<User[]> => {
-  return db.select().from(users).where(eq(users.isDeleted, false));
+export const deleteUserById = async (id: number) => {
+  try {
+    const [deletedUser] = await db.delete(users).where(eq(users.id, id)).returning();
+    if (!deletedUser) return { user: null, message: 'User not found or already deleted' };
+    return { user: deletedUser, message: 'User deleted successfully' };
+  } catch (error: any) {
+    return { user: null, ...serviceError(error, 'Failed to delete user') };
+  }
 };

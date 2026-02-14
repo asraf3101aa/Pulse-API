@@ -6,32 +6,33 @@ import { status as httpStatus } from 'http-status';
 import { authService } from '../services';
 
 export const register = catchAsync(async (req, res) => {
-    const user = await userService.createUser(req.body);
-    ApiResponse.created(res, user, 'User registered successfully');
+    const { user, message } = await userService.createUser(req.body);
+    if (!user) {
+        return ApiResponse.error(res, message);
+    }
+    return ApiResponse.created(res, user, message);
 });
 
 export const login = catchAsync(async (req, res) => {
     const { identifier, password } = req.body;
-    const user = await authService.loginUserWithEmailOrUsernameAndPassword(identifier, password);
+    const { user } = await authService.loginUserWithEmailOrUsernameAndPassword(identifier, password);
     if (!user) {
-        ApiResponse.fail(res, 'Incorrect email/username or password', httpStatus.UNAUTHORIZED);
-        return;
+        return ApiResponse.fail(res, 'Incorrect email/username or password', httpStatus.UNAUTHORIZED);
     }
-    const tokens = await tokenService.generateAuthTokens(user.id);
-    ApiResponse.success(res, { user, tokens }, 'Login successful');
+    const { tokens, message: tokenMessage } = await tokenService.generateAuthTokens(user.id);
+    return ApiResponse.success(res, { user, tokens }, tokenMessage);
 });
 
 export const refreshTokens = catchAsync(async (req, res) => {
-    const { refreshToken } = req.body;
-    const tokens = await authService.refreshAuth(refreshToken);
+    const { refreshToken: token } = req.body;
+    const { tokens, message } = await authService.refreshAuth(token);
     if (!tokens) {
-        ApiResponse.fail(res, 'Invalid refresh token', httpStatus.UNAUTHORIZED);
-        return;
+        return ApiResponse.fail(res, message, httpStatus.UNAUTHORIZED);
     }
-    ApiResponse.success(res, { ...tokens }, 'Tokens refreshed successfully');
+    return ApiResponse.success(res, tokens, message);
 });
 
 export const getAuthUserProfile = catchAsync(async (req, res) => {
-    ApiResponse.success(res, req.user, 'User profile fetched successfully');
+    return ApiResponse.success(res, req.user, 'User profile fetched successfully');
 });
 

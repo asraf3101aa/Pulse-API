@@ -36,7 +36,7 @@ const auth = (...requiredPermissions: Permission[]) =>
                 return ApiResponse.unauthorized(res);
             }
 
-            const userId = parseInt(payload.sub, 10);
+            const userId = Number(payload.sub);
             if (isNaN(userId)) {
                 return ApiResponse.unauthorized(res, 'Invalid user ID in token');
             }

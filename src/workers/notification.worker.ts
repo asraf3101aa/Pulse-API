@@ -11,7 +11,7 @@ export const notificationWorker = new Worker(
 
         logger.info(`Processing notification job ${job.id} for user ${userId}`);
 
-        const prefs = await notificationService.getPreferences(userId);
+        const { prefs } = await notificationService.getPreferences(userId);
         if (!prefs) return;
 
         // 1. In-App Notification
@@ -21,7 +21,7 @@ export const notificationWorker = new Worker(
 
         // 2. Email Notification
         if (prefs.emailEnabled) {
-            const user = await userService.getUserById(userId);
+            const { user } = await userService.getUserById(userId);
             if (user && user.email) {
                 await sendEmail(user.email, title, message);
             }
